@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>ULTRON AI</title>
 
   <style>
@@ -44,10 +45,17 @@
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: radial-gradient(circle, #ffffff 0%, #aeb8c2 18%, #58636d 45%, #14191e 70%);
+      background:
+        radial-gradient(circle,
+        #ffffff 0%,
+        #aeb8c2 18%,
+        #58636d 45%,
+        #14191e 70%);
+
       box-shadow:
         0 0 15px #b9c4ce,
-        0 0 35px rgba(180, 195, 210, 0.35);
+        0 0 35px rgba(180,195,210,.35);
+
       animation: pulse 2s infinite ease-in-out;
     }
 
@@ -56,7 +64,7 @@
         transform: scale(1.08);
         box-shadow:
           0 0 25px #dce5ed,
-          0 0 55px rgba(190, 205, 220, 0.45);
+          0 0 55px rgba(190,205,220,.45);
       }
     }
 
@@ -88,12 +96,13 @@
       border-radius: 16px;
       line-height: 1.45;
       font-size: 15px;
+      white-space: pre-wrap;
     }
 
     .ai {
       align-self: flex-start;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.08);
     }
 
     .user {
@@ -131,7 +140,11 @@
     }
 
     button:active {
-      transform: scale(0.96);
+      transform: scale(.96);
+    }
+
+    button:disabled {
+      opacity: .5;
     }
 
     .footer {
@@ -146,90 +159,177 @@
 
 <body>
 
-  <main class="app">
+<main class="app">
 
-    <header class="header">
-      <div class="core"></div>
+  <header class="header">
 
-      <div>
-        <div class="title">ULTRON</div>
-        <div class="status">SYSTEM ONLINE • AWAITING COMMAND</div>
+    <div class="core"></div>
+
+    <div>
+      <div class="title">ULTRON</div>
+
+      <div class="status" id="status">
+        SYSTEM ONLINE
       </div>
-    </header>
-
-    <section class="chat" id="chat">
-
-      <div class="message ai">
-        Hello. I am Ultron.<br>
-        My interface is online. My intelligence module is not connected yet.
-      </div>
-
-    </section>
-
-    <div class="input-area">
-      <input
-        id="input"
-        type="text"
-        placeholder="Enter command..."
-        autocomplete="off"
-      >
-
-      <button onclick="sendMessage()">SEND</button>
     </div>
 
-    <div class="footer">
-      ULTRON AI • PERSONAL ASSISTANT
+  </header>
+
+  <section class="chat" id="chat">
+
+    <div class="message ai">
+      Hello. I am Ultron.
+      My intelligence module is now connecting...
     </div>
 
-  </main>
+  </section>
 
-  <script>
+  <div class="input-area">
 
-    const input = document.getElementById("input");
-    const chat = document.getElementById("chat");
+    <input
+      id="input"
+      type="text"
+      placeholder="Ask Ultron..."
+      autocomplete="off"
+    >
 
-    function addMessage(text, type) {
+    <button id="sendBtn" onclick="sendMessage()">
+      SEND
+    </button>
 
-      const message = document.createElement("div");
+  </div>
 
-      message.className = "message " + type;
+  <div class="footer">
+    ULTRON AI • PERSONAL ASSISTANT
+  </div>
 
-      message.innerHTML = text;
+</main>
 
-      chat.appendChild(message);
 
-      chat.scrollTop = chat.scrollHeight;
-    }
+<script>
 
-    function sendMessage() {
+const BACKEND_URL =
+"https://script.google.com/macros/s/AKfycbyY3r_JLe6fufbPHV7UDgYCZFwGD8XZZFfPCep3Woc_2M7BVcRuRAo_1K8yU7xCgk12/exec";
 
-      const text = input.value.trim();
 
-      if (!text) return;
+const input = document.getElementById("input");
+const chat = document.getElementById("chat");
+const sendBtn = document.getElementById("sendBtn");
+const statusText = document.getElementById("status");
 
-      addMessage(text, "user");
 
-      input.value = "";
+function addMessage(text, type) {
 
-      setTimeout(() => {
+  const message = document.createElement("div");
 
-        addMessage(
-          "My AI brain is not connected yet. That is our next upgrade.",
-          "ai"
-        );
+  message.className = "message " + type;
 
-      }, 500);
-    }
+  message.textContent = text;
 
-    input.addEventListener("keydown", function(event) {
+  chat.appendChild(message);
 
-      if (event.key === "Enter") {
-        sendMessage();
-      }
+  chat.scrollTop = chat.scrollHeight;
+}
+
+
+async function sendMessage() {
+
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  addMessage(text, "user");
+
+  input.value = "";
+
+  sendBtn.disabled = true;
+
+  statusText.textContent = "ULTRON THINKING...";
+
+
+  const thinking = document.createElement("div");
+
+  thinking.className = "message ai";
+
+  thinking.textContent = "Processing...";
+
+  chat.appendChild(thinking);
+
+  chat.scrollTop = chat.scrollHeight;
+
+
+  try {
+
+    const response = await fetch(BACKEND_URL, {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+
+      body: JSON.stringify({
+        message: text
+      })
 
     });
 
-  </script>
+
+    const data = await response.json();
+
+    thinking.remove();
+
+
+    if (data.success) {
+
+      addMessage(data.reply, "ai");
+
+      statusText.textContent = "SYSTEM ONLINE";
+
+    } else {
+
+      addMessage(
+        "ULTRON ERROR:\n" + (data.error || "Unknown error"),
+        "ai"
+      );
+
+      statusText.textContent = "SYSTEM ERROR";
+
+    }
+
+
+  } catch (error) {
+
+    thinking.remove();
+
+    addMessage(
+      "Connection error.\nPlease check the backend deployment.",
+      "ai"
+    );
+
+    statusText.textContent = "CONNECTION ERROR";
+
+    console.error(error);
+
+  }
+
+
+  sendBtn.disabled = false;
+
+  input.focus();
+
+}
+
+
+input.addEventListener("keydown", function(event) {
+
+  if (event.key === "Enter") {
+    sendMessage();
+  }
+
+});
+
+</script>
 
 </body>
 </html>
